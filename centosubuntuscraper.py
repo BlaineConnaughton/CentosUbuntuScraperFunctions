@@ -1,5 +1,4 @@
 
-from mohawk import Sender
 import requests
 import os
 import sys
