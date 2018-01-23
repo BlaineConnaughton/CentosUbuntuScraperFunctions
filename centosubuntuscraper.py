@@ -94,7 +94,7 @@ def main():
 	osnumber = sys.argv[2] #version number of OS for unbuntu expecting 14.04 16.04 etc for centos red hat just the major version 6, 7 etc
 
 	#First query api and get list of CVE and packages
-	cvePackageList = get_Vulnerabilities(USER_ID, ORGANIZATION_ID, API_KEY)
+	cvePackageList = get_Vulnerabilities()
 
 	#The two sources have different data for fields and headers, try and consolidate this later
 	if osversion == "ubuntu":
