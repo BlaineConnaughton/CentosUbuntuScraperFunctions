@@ -47,22 +47,34 @@ def scrape_ubuntu(cve , os_version , vulnpackage):
 	return url , prio , "Needs manual confirmation" , "Needs manual confirmation"
 
 def scrape_redhat(cve , os_version , vulnpackage):
-	# sample cve = 'CVE-2015-6240'
-	# returns url , prio , upstream , status , packageScraped , osChecked
-
+	#The check for os version is just a contains, the ways software names is captures is all over the place
+	
 	url = "https://access.redhat.com/labs/securitydataapi/cve/%s.json" % (cve)
 	r = requests.get(url)
-		
 	#Redhat/Centos returns a 404 for missing CVEs.  They do not have CVE's for notices that do not impact redhat
 	if r.status_code == 404:
 		return url , "N/A" , "N/A" , "Doesn't impact OS" , "N/A" , "N/A"
 	else:    
 		cveData = json.loads(r.text)
 
-	#First check for package information, not everything has it but most do
+	#First check for affected releases, If we find a match to our OS, return that back
+	affectedRelease = cveData.get("affected_release")
+	if affectedRelease != None:
+		#can be either a dict or a list.  Figure out which, then go through to see if this impacts our OS version
+		if type(affectedRelease) is dict:
+			if affectedRelease.get('product_name').find(os_version) > -1:
+				return url, cveData.get('threat_severity'), cveData.get('upstream_fix') , affectedRelease.get('advisory'), affectedRelease.get('package') , affectedRelease.get('product_name')
+		else:
+			for release in affectedRelease:
+				if release['product_name'].find(os_version) > -1:
+					return url, cveData.get('threat_severity'), cveData.get('upstream_fix') , release.get('advisory'), release.get('package') , release.get('product_name')
+		
+
+	#If there were no affected releases group or we don't find a match, then go through package states
+	
 	packages = cveData.get("package_state")
 	if packages == None:
-		return url , cveData.get('threat_severity') , cveData.get('upstream_fix') , "No Package list" ,  "No Package list","No OS list"
+		return url , cveData.get('threat_severity') , cveData.get('upstream_fix') , "Does not Impact OS version" ,  "Does not Impact OS version","Does not Impact OS version"
 	else:
 		#Package can be either a dict or a list.  Figure out which, then go through to see if this impacts our OS version
 		if type(packages) is dict:
